@@ -1,0 +1,1 @@
+﻿EXEC sp_Emp_GetById @EmpId = 1;

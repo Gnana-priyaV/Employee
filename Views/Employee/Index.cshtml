@@ -1,0 +1,129 @@
+﻿@{
+    ViewBag.Title = "Employee Management";
+}
+
+<h2>Employee Management</h2>
+
+<input type="hidden" id="EmpId" value="0" />
+
+<div class="row g-2 mb-3">
+    <div class="col-md-4"><input id="FullName" class="form-control" placeholder="Full name" /></div>
+    <div class="col-md-4"><input id="Email" class="form-control" placeholder="Email" /></div>
+    <div class="col-md-4"><input id="Phone" class="form-control" placeholder="Phone (10 digits)" /></div>
+    <div class="col-md-4">
+        <select id="Department" class="form-control">
+            <option value="">-- Department --</option>
+            <option>IT</option>
+            <option>HR</option>
+            <option>Finance</option>
+        </select>
+    </div>
+    <div class="col-md-4"><input id="Salary" type="number" class="form-control" placeholder="Salary" /></div>
+    <div class="col-md-4"><input id="JoinDate" type="date" class="form-control" /></div>
+</div>
+
+<button id="btnSave" class="btn btn-primary">Save</button>
+<button id="btnClear" class="btn btn-secondary">Clear</button>
+<div id="errors" style="color:red; margin-top:10px;"></div>
+
+<hr />
+
+<table class="table table-striped" id="tbl">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Dept</th>
+            <th>Salary</th>
+            <th>Joined</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+@section scripts {
+    <script>
+    function fmtDate(d) {
+        var dt = new Date(parseInt(d.substr(6)));
+        var m = ('0' + (dt.getMonth() + 1)).slice(-2);
+        var day = ('0' + dt.getDate()).slice(-2);
+        return dt.getFullYear() + '-' + m + '-' + day;
+    }
+
+    function load() {
+        $.get('/Employee/GetAll', function (data) {
+            var rows = '';
+            $.each(data, function (i, e) {
+                rows += '<tr><td>' + e.FullName + '</td><td>' + e.Email + '</td><td>' + e.Phone +
+                    '</td><td>' + e.Department + '</td><td>' + e.Salary + '</td><td>' + fmtDate(e.JoinDate) +
+                    '</td><td><button class="btn btn-sm btn-warning" onclick="edit(' + e.EmpId + ')">Edit</button> ' +
+                    '<button class="btn btn-sm btn-danger" onclick="del(' + e.EmpId + ')">Delete</button></td></tr>';
+            });
+            $('#tbl tbody').html(rows);
+        });
+    }
+
+    function validate() {
+        var err = [];
+        if (!$('#FullName').val().trim()) err.push('Name is required');
+        if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test($('#Email').val())) err.push('Valid email required');
+        if ($('#Phone').val() && !/^\d{10}$/.test($('#Phone').val())) err.push('Phone must be 10 digits');
+        if (!$('#Department').val()) err.push('Select a department');
+        if (!($('#Salary').val() > 0)) err.push('Salary must be greater than 0');
+        if (!$('#JoinDate').val()) err.push('Join date is required');
+        $('#errors').html(err.join('<br>'));
+        return err.length === 0;
+    }
+
+    $('#btnSave').click(function () {
+        if (!validate()) return;
+        $.ajax({
+            url: '/Employee/Save',
+            type: 'POST',
+            data: {
+                EmpId: $('#EmpId').val(),
+                FullName: $('#FullName').val(),
+                Email: $('#Email').val(),
+                Phone: $('#Phone').val(),
+                Department: $('#Department').val(),
+                Salary: $('#Salary').val(),
+                JoinDate: $('#JoinDate').val()
+            },
+            success: function (res) {
+                if (res.success) { clearForm(); load(); }
+                else { $('#errors').text(res.message); }
+            },
+            error: function () { $('#errors').text('Server error'); }
+        });
+    });
+
+    function edit(id) {
+        $.get('/Employee/GetById', { id: id }, function (e) {
+            $('#EmpId').val(e.EmpId);
+            $('#FullName').val(e.FullName);
+            $('#Email').val(e.Email);
+            $('#Phone').val(e.Phone);
+            $('#Department').val(e.Department);
+            $('#Salary').val(e.Salary);
+            $('#JoinDate').val(fmtDate(e.JoinDate));
+        });
+    }
+
+    function del(id) {
+        if (!confirm('Delete this employee?')) return;
+        $.post('/Employee/Delete', { id: id }, function () { load(); });
+    }
+
+    function clearForm() {
+        $('#EmpId').val(0);
+        $('input:not([type=hidden])').val('');
+        $('#Department').val('');
+        $('#errors').text('');
+    }
+
+    $('#btnClear').click(clearForm);
+    $(load);
+    </script>
+}
