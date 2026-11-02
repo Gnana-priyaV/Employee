@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Employee Management";
 }
 
@@ -50,7 +50,16 @@
         var m = ('0' + (dt.getMonth() + 1)).slice(-2);
         var day = ('0' + dt.getDate()).slice(-2);
         return dt.getFullYear() + '-' + m + '-' + day;
-    }
+        }
+
+        function today() {
+            var d = new Date();
+            return d.getFullYear() + '-' +
+                ('0' + (d.getMonth() + 1)).slice(-2) + '-' +
+                ('0' + d.getDate()).slice(-2);
+        }
+
+        $('#JoinDate').attr('max', today());
 
     function load() {
         $.get('/Employee/GetAll', function (data) {
@@ -73,6 +82,7 @@
         if (!$('#Department').val()) err.push('Select a department');
         if (!($('#Salary').val() > 0)) err.push('Salary must be greater than 0');
         if (!$('#JoinDate').val()) err.push('Join date is required');
+        if ($('#JoinDate').val() && $('#JoinDate').val() > today()) err.push('Join date cannot be in the future');
         $('#errors').html(err.join('<br>'));
         return err.length === 0;
     }
