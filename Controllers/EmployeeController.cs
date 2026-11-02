@@ -54,6 +54,8 @@ namespace EmployeeMgmt.Controllers
         {
             if (string.IsNullOrWhiteSpace(e.FullName) || string.IsNullOrWhiteSpace(e.Email))
                 return Json(new { success = false, message = "Name and Email required" });
+            if (e.JoinDate.Date > DateTime.Today)
+                return Json(new { success = false, message = "Join date cannot be in the future" });
 
             using (var con = new SqlConnection(cs))
             using (var cmd = new SqlCommand(e.EmpId == 0 ? "sp_Emp_Insert" : "sp_Emp_Update", con))
